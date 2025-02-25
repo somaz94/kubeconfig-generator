@@ -1,0 +1,4 @@
+# username email context expiration_days role namespace
+# role: cluster-admin, admin, edit, view
+# namespace: e.g all, default, dev, qa, prod
+somaz somaz@somaz.link somaz@cluster.local unlimited cluster-admin all
