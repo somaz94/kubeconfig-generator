@@ -5,11 +5,46 @@ This tool provides a script to create user accounts in a Kubernetes cluster and 
 > ⚠️ This script must be run by a cluster administrator  
 > The context name must be one of the results from `kubectl config get-contexts -o name`
 
-<br/>
+## Prerequisites
+
+Before using this tool, ensure you have the following components installed:
+
+1. **kubectl** - Kubernetes command-line tool
+   ```bash
+   # Install on Linux
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   chmod +x kubectl
+   sudo mv kubectl /usr/local/bin/
+   
+   # Install on macOS
+   brew install kubectl
+   ```
+
+2. **OpenSSL** - For certificate generation
+   ```bash
+   # Install on Linux
+   sudo apt-get install openssl  # Debian/Ubuntu
+   sudo yum install openssl      # CentOS/RHEL
+   
+   # Install on macOS
+   brew install openssl
+   ```
+
+3. **Base64** - For encoding/decoding
+   ```bash
+   # Install on Linux
+   sudo apt-get install coreutils  # Debian/Ubuntu
+   sudo yum install coreutils      # CentOS/RHEL
+   
+   # Install on macOS (for gbase64)
+   brew install coreutils
+   ```
+
+4. **Proper RBAC permissions** - The user running this script must have cluster-admin privileges to:
+   - Create and approve CSRs
+   - Create RoleBindings and ClusterRoleBindings
 
 ## Usage
-
-<br/>
 
 ### 1. Preparation
 **Enter the required information**
@@ -33,8 +68,6 @@ john john@example.com production-cluster 365 edit development
 alice alice@example.com staging-cluster unlimited cluster-admin all
 ```
 
-<br/>
-
 ### 2. Run the script
 
 ```bash
@@ -50,13 +83,9 @@ The script will:
 6. Create appropriate role bindings
 7. Test the generated kubeconfig
 
-<br/>
-
 ### 3. Output
 
 Generated kubeconfig files will be stored in the `./output` directory.
-
-<br/>
 
 ### 4. Testing the Generated Config
 
@@ -70,8 +99,6 @@ kubectl --kubeconfig=./output/{username}.config config view --raw
 kubectl --kubeconfig=./output/{username}.config get nodes
 ```
 
-<br/>
-
 ## Available Roles
 
 The script supports the following built-in roles:
@@ -81,8 +108,6 @@ The script supports the following built-in roles:
 - `edit`: Read/write access to most resources in a namespace (cannot modify roles)
 - `view`: Read-only access to most resources in a namespace
 
-<br/>
-
 ## Certificate Expiration
 
 The certificate expiration is determined by:
@@ -90,8 +115,6 @@ The certificate expiration is determined by:
 2. The Kubernetes API server's maximum allowed certificate duration (typically 1 year)
 
 Even if "unlimited" is specified, the actual duration may be limited by the cluster configuration.
-
-<br/>
 
 ## Checking Certificate Validity
 
