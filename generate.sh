@@ -182,8 +182,11 @@ create_role_binding() {
 
   # 클러스터 역할인지 확인 (namespace가 "all"인 경우)
   if [ "$namespace" == "all" ]; then
-    # ClusterRoleBinding 생성
-    cat <<EOF | kubectl --context=${context} create -f -
+    # 이미 ClusterRoleBinding이 존재하는지 확인
+    if kubectl --context=${context} get clusterrolebinding ${binding_name} &> /dev/null; then
+      echo "ClusterRoleBinding '${binding_name}' already exists. Updating..."
+      # 기존 ClusterRoleBinding 업데이트
+      cat <<EOF | kubectl --context=${context} apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -197,7 +200,25 @@ roleRef:
   name: ${role}
   apiGroup: rbac.authorization.k8s.io
 EOF
-    echo "Created ClusterRoleBinding '${binding_name}' for user '${username}' with ClusterRole '${role}'"
+      echo "Updated ClusterRoleBinding '${binding_name}' for user '${username}' with ClusterRole '${role}'"
+    else
+      # 새 ClusterRoleBinding 생성
+      cat <<EOF | kubectl --context=${context} create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ${binding_name}
+subjects:
+- kind: User
+  name: ${username}
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: ${role}
+  apiGroup: rbac.authorization.k8s.io
+EOF
+      echo "Created ClusterRoleBinding '${binding_name}' for user '${username}' with ClusterRole '${role}'"
+    fi
   else
     # 네임스페이스가 존재하는지 확인
     if ! kubectl --context=${context} get namespace ${namespace} &> /dev/null; then
@@ -205,8 +226,11 @@ EOF
       kubectl --context=${context} create namespace ${namespace}
     fi
 
-    # RoleBinding 생성
-    cat <<EOF | kubectl --context=${context} create -f -
+    # 이미 RoleBinding이 존재하는지 확인
+    if kubectl --context=${context} get rolebinding ${binding_name} -n ${namespace} &> /dev/null; then
+      echo "RoleBinding '${binding_name}' already exists in namespace '${namespace}'. Updating..."
+      # 기존 RoleBinding 업데이트
+      cat <<EOF | kubectl --context=${context} apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -221,7 +245,26 @@ roleRef:
   name: ${role}
   apiGroup: rbac.authorization.k8s.io
 EOF
-    echo "Created RoleBinding '${binding_name}' for user '${username}' with Role '${role}' in namespace '${namespace}'"
+      echo "Updated RoleBinding '${binding_name}' for user '${username}' with Role '${role}' in namespace '${namespace}'"
+    else
+      # 새 RoleBinding 생성
+      cat <<EOF | kubectl --context=${context} create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ${binding_name}
+  namespace: ${namespace}
+subjects:
+- kind: User
+  name: ${username}
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: ${role}
+  apiGroup: rbac.authorization.k8s.io
+EOF
+      echo "Created RoleBinding '${binding_name}' for user '${username}' with Role '${role}' in namespace '${namespace}'"
+    fi
   fi
 }
  
